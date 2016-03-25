@@ -24,7 +24,7 @@ public class TaskExecutorSimpleTest
 				}
 			}
 		};
-		
+
 		Thread insertThread = new Thread(inserter);
 		insertThread.start();
 	}
