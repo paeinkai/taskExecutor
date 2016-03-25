@@ -9,6 +9,7 @@ import edu.utdallas.taskExecutor.TaskExecutor;
 
 public class TaskExecutorImpl implements TaskExecutor
 {
+	@SuppressWarnings("unused")
 	private static BlockingFIFOQueue bfqueue;
 	private List<TaskRunner> runnerPool;
 	
