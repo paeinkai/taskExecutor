@@ -5,38 +5,80 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 public class BlockingFIFOQueue {
 	public final int queueMaxSize = 100;
-	Task queue[];
+	static Task queue[];
 	
-	int nextin,nextout;
-	int count;
+	static int nextin,nextout;
+	static int count;
+	private static Object notfull;
+	private static Object notempty;
 	
-	
-	
-	//TODO: replace with our implementation of BlockingFIFOQueue
-	private static ArrayBlockingQueue<Task> tasks;
 	
 	public BlockingFIFOQueue()
 	{
-		tasks = new ArrayBlockingQueue<Task>(queueMaxSize);
+		queue = new Task[queueMaxSize];
+		init();
 	}
 
 	public BlockingFIFOQueue(int n)
 	{
-		if (n < queueMaxSize)
-			tasks = new ArrayBlockingQueue<Task>(n);
+		if (n <= queueMaxSize)
+			queue = new Task[n];
 		else
-			tasks = new ArrayBlockingQueue<Task>(queueMaxSize);
+			queue = new Task[queueMaxSize];
+		init();
+	}
+	
+	private void init()
+	{
+		this.count = 0;
+		this.nextin = 0;
+		this.nextout = 0;
+		notfull = new Object();
+		notempty = new Object();
 	}
 	
     public static void put(Task item) throws InterruptedException, NullPointerException {
-    	tasks.put(item);
     	
-    	
+    	synchronized (notfull)
+    	{
+    		while (count == queue.length)
+    		{
+    			notfull.wait();
+    		}
+    		queue[nextin] = item;
+    		nextin = ++nextin % queue.length;
+    	}
+    	synchronized (notempty)
+    	{
+    		if (count++ == 0)
+    		{
+    			notempty.notifyAll();
+    		}
+    	}
     	
     }
     
     public static Task take() throws InterruptedException {
-    	return tasks.take();
+    	Task result = null;
+    	
+    	synchronized (notempty)
+    	{
+    		while (count == 0)
+    		{
+    			notempty.wait();
+    		}
+    		result = queue[nextout];
+    		nextout = ++nextout % queue.length;
+    	}
+    	synchronized (notfull)
+    	{
+    		if (count-- == queue.length)
+    		{
+    			notfull.notifyAll();
+    		}
+    	}
+
+    	return result;
     }
 }
 
