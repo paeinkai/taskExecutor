@@ -1,7 +1,6 @@
 package edu.utdallas.blockingFIFO;
 import edu.utdallas.taskExecutor.*;
 
-import java.util.concurrent.ArrayBlockingQueue;
 
 public class BlockingFIFOQueue {
 	public final int queueMaxSize = 100;
@@ -30,9 +29,9 @@ public class BlockingFIFOQueue {
 	
 	private void init()
 	{
-		this.count = 0;
-		this.nextin = 0;
-		this.nextout = 0;
+		count = 0;
+		nextin = 0;
+		nextout = 0;
 		notfull = new Object();
 		notempty = new Object();
 	}
