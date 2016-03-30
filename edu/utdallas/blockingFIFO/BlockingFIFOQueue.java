@@ -1,20 +1,26 @@
 package edu.utdallas.blockingFIFO;
 import edu.utdallas.taskExecutor.*;
 
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class BlockingFIFOQueue {
-	public final int queueMaxSize = 100;
+	public final static int queueMaxSize = 100;
 	static Task queue[];
 	
 	static int nextin,nextout;
 	static int count;
-	private static Object notfull;
-	private static Object notempty;
-	
+	private static Lock lock;
+	private static Condition notfull;
+	private static Condition notempty;
 	
 	public BlockingFIFOQueue()
 	{
 		queue = new Task[queueMaxSize];
+		lock = new ReentrantLock();
+		notfull = lock.newCondition();
+		notempty = lock.newCondition();
 		init();
 	}
 
@@ -32,52 +38,37 @@ public class BlockingFIFOQueue {
 		count = 0;
 		nextin = 0;
 		nextout = 0;
-		notfull = new Object();
-		notempty = new Object();
 	}
-	
-    public static void put(Task item) throws InterruptedException, NullPointerException {
-    	
-    	synchronized (notfull)
-    	{
-    		while (count == queue.length)
-    		{
-    			notfull.wait();
-    		}
+
+    public static void put(Task item) throws InterruptedException {
+    	lock.lock();
+    	try {
+    		while (count == queueMaxSize) 
+    			notfull.await();
     		queue[nextin] = item;
-    		nextin = ++nextin % queue.length;
+    		nextin = (nextin + 1) % queueMaxSize;
+    		count++;
+    		notempty.signal();
+    	} finally {
+    		lock.unlock();
     	}
-    	synchronized (notempty)
-    	{
-    		if (count++ == 0)
-    		{
-    			notempty.notifyAll();
-    		}
-    	}
-    	
     }
     
     public static Task take() throws InterruptedException {
-    	Task result = null;
-    	
-    	synchronized (notempty)
-    	{
-    		while (count == 0)
-    		{
-    			notempty.wait();
-    		}
-    		result = queue[nextout];
-    		nextout = ++nextout % queue.length;
-    	}
-    	synchronized (notfull)
-    	{
-    		if (count-- == queue.length)
-    		{
-    			notfull.notifyAll();
-    		}
-    	}
+    	lock.lock();
+    	Task t;
+    	try {
+    		while (count == 0) 
+    			notempty.await();
+    		t = queue[nextout];
+    		nextout = (nextout + 1) % queueMaxSize;
+    		count --;
+    		notfull.signal();
 
-    	return result;
+    		return t;
+    	} finally {
+    		lock.unlock();
+    	}
     }
 }
 
